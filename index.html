@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>筆算ドリル</title>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #F0F4FF; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+
+// ── 問題プール（整数÷小数、割り切れる問題のみ） ──
+const PROBLEM_POOL = [
+  {dividend:18,divisor:1.5,answer:12},{dividend:33,divisor:1.5,answer:22},{dividend:48,divisor:1.5,answer:32},
+  {dividend:30,divisor:2.5,answer:12},{dividend:55,divisor:2.5,answer:22},{dividend:80,divisor:2.5,answer:32},
+  {dividend:18,divisor:1.2,answer:15},{dividend:21,divisor:1.5,answer:14},{dividend:30,divisor:1.2,answer:25},
+  {dividend:21,divisor:1.4,answer:15},{dividend:35,divisor:1.4,answer:25},{dividend:42,divisor:3.5,answer:12},
+  {dividend:24,divisor:1.6,answer:15},{dividend:40,divisor:1.6,answer:25},{dividend:56,divisor:1.6,answer:35},
+  {dividend:24,divisor:1.5,answer:16},{dividend:27,divisor:1.8,answer:15},{dividend:39,divisor:1.5,answer:26},
+  {dividend:35,divisor:2.5,answer:14},{dividend:60,divisor:2.5,answer:24},{dividend:85,divisor:2.5,answer:34},
+  {dividend:27,divisor:1.5,answer:18},{dividend:36,divisor:2.4,answer:15},{dividend:42,divisor:1.5,answer:28},
+  {dividend:49,divisor:3.5,answer:14},{dividend:84,divisor:3.5,answer:24},{dividend:40,divisor:2.5,answer:16},
+  {dividend:65,divisor:2.5,answer:26},{dividend:90,divisor:2.5,answer:36},{dividend:48,divisor:3.2,answer:15},
+  {dividend:80,divisor:3.2,answer:25},{dividend:63,divisor:4.5,answer:14},{dividend:45,divisor:2.5,answer:18},
+  {dividend:70,divisor:2.5,answer:28},{dividend:95,divisor:2.5,answer:38},{dividend:56,divisor:3.5,answer:16},
+  {dividend:91,divisor:3.5,answer:26},{dividend:72,divisor:4.5,answer:16},{dividend:63,divisor:3.5,answer:18},
+  {dividend:98,divisor:3.5,answer:28},{dividend:81,divisor:4.5,answer:18},{dividend:10,divisor:2.5,answer:4},
+  {dividend:12,divisor:1.2,answer:10},{dividend:12,divisor:1.5,answer:8},{dividend:12,divisor:2.4,answer:5},
+  {dividend:14,divisor:1.4,answer:10},{dividend:15,divisor:1.5,answer:10},{dividend:15,divisor:2.5,answer:6},
+  {dividend:16,divisor:1.6,answer:10},
+];
+
+// ── 筆算ステップ生成 ──
+function buildSteps(dividend, divisor) {
+  const dec = (divisor.toString().split(".")[1] || "").length;
+  const mult = Math.pow(10, dec);
+  const iDvd = Math.round(dividend * mult);
+  const iDvr = Math.round(divisor * mult);
+  const dvdStr = iDvd.toString();
+
+  const steps = [];
+  let cur = 0, pos = 0, qDigits = [];
+
+  while (pos < dvdStr.length) {
+    cur = cur * 10 + parseInt(dvdStr[pos]);
+    pos++;
+    if (cur < iDvr && pos < dvdStr.length) { qDigits.push(0); continue; }
+    const q = Math.floor(cur / iDvr);
+    const prod = q * iDvr;
+    const rem = cur - prod;
+    const next = pos < dvdStr.length ? parseInt(dvdStr[pos]) : null;
+    steps.push({ current: cur, divisor: iDvr, q, prod, rem, next });
+    qDigits.push(q);
+    cur = rem;
+  }
+  return { steps, intDividend: iDvd, intDivisor: iDvr, quotient: parseInt(qDigits.join("")) };
+}
+
+// ── 筆算ビジュアル（日本式：商を最上段に配置） ──
+function LongDivisionVisual({ intDividend, intDivisor, steps, stepIdx, subStep }) {
+  const CELL = 28;
+  const dvdStr = intDividend.toString();
+  const totalCols = dvdStr.length;
+  const dvrWidth = (intDivisor.toString().length + 1) * CELL;
+
+  // 商の各桁が対応する列（被除数上の列）を計算
+  const qEntries = []; // { col, char }
+  let p = 0, c = 0;
+  for (let i = 0; i < dvdStr.length; i++) {
+    c = c * 10 + parseInt(dvdStr[i]);
+    if (c < intDivisor && i < dvdStr.length - 1) continue; // まだ割れない桁はスキップ
+    const q = Math.floor(c / intDivisor);
+    qEntries.push({ col: i, char: q.toString() });
+    c -= q * intDivisor;
+  }
+
+  // ステップ i の右端列（被除数の何列目まで使うか）
+  function stepRightCol(stepI) {
+    let pos = 0, cur = 0, col = 0;
+    for (let i = 0; i <= stepI; i++) {
+      while (pos < dvdStr.length) {
+        cur = cur * 10 + parseInt(dvdStr[pos]);
+        pos++;
+        if (cur >= intDivisor || pos >= dvdStr.length) break;
+      }
+      col = pos - 1;
+      if (i < stepI) { cur -= Math.floor(cur / intDivisor) * intDivisor; }
+    }
+    return col;
+  }
+
+  // 固定幅セルを1列ぶん描画するヘルパー
+  const Cell = ({ char = "", color = "#222", bg = "transparent" }) => (
+    <div style={{ width: CELL, height: CELL, display: "flex", alignItems: "center", justifyContent: "center",
+      fontFamily: "monospace", fontSize: "20px", fontWeight: "bold", color, background: bg, flexShrink: 0 }}>
+      {char}
+    </div>
+  );
+
+  // 列ぶんのセル列を描画（colMap: { col: {char,color} }）
+  const GridRow = ({ colMap = {}, height = CELL }) => (
+    <div style={{ display: "flex", height, alignItems: "center" }}>
+      <div style={{ width: dvrWidth, flexShrink: 0 }} />
+      {Array.from({ length: totalCols }).map((_, col) => {
+        const v = colMap[col];
+        return <Cell key={col} char={v?.char || ""} color={v?.color || "#222"} />;
+      })}
+    </div>
+  );
+
+  // 横線行
+  const LineRow = ({ fromCol, toCol }) => (
+    <div style={{ display: "flex", height: 6, alignItems: "center" }}>
+      <div style={{ width: dvrWidth, flexShrink: 0 }} />
+      {Array.from({ length: totalCols }).map((_, col) => (
+        <div key={col} style={{ width: CELL, height: "100%",
+          borderBottom: col >= fromCol && col <= toCol ? "2px solid #aaa" : "none" }} />
+      ))}
+    </div>
+  );
+
+  return (
+    <div style={{ fontFamily: "monospace", background: "#F8FAFF", borderRadius: "12px",
+      padding: "16px 20px", marginBottom: "16px", overflowX: "auto" }}>
+
+      {/* ① 商の行（最上段） */}
+      <GridRow colMap={Object.fromEntries(
+        qEntries.map(({ col, char }, qi) => {
+          const revealed = qi <= stepIdx && subStep >= 1;
+          return [col, {
+            char: revealed ? char : "",
+            color: qi === stepIdx && subStep >= 1 ? "#1976D2" : "#333",
+          }];
+        })
+      )} />
+
+      {/* ② 被除数行（除数・）・被除数を1セルずつ並べ、）以降の上に線） */}
+      <div style={{ display: "flex", alignItems: "center", height: CELL, marginBottom: 2 }}>
+        {/* 除数を1桁ずつセルに */}
+        {intDivisor.toString().split("").map((ch, i) => (
+          <Cell key={"dvr"+i} char={ch} color="#555" />
+        ))}
+        {/* ）記号：上線あり */}
+        <div style={{ width: CELL, height: CELL, display: "flex", alignItems: "center",
+          justifyContent: "center", fontFamily: "monospace", fontSize: "24px",
+          fontWeight: "bold", color: "#333", flexShrink: 0,
+          borderTop: "2px solid #333" }}>）</div>
+        {/* 被除数：上線あり */}
+        {dvdStr.split("").map((ch, col) => (
+          <div key={col} style={{ width: CELL, height: CELL, display: "flex", alignItems: "center",
+            justifyContent: "center", fontFamily: "monospace", fontSize: "20px",
+            fontWeight: "bold", color: "#1a237e", flexShrink: 0,
+            borderTop: "2px solid #333" }}>{ch}</div>
+        ))}
+      </div>
+
+      {/* ③ 計算過程（積・横線・あまり） */}
+      {steps.map((s, i) => {
+        if (i > stepIdx) return null;
+        const rc = stepRightCol(i);
+        const showProd = i < stepIdx || subStep >= 2;
+        const showRem  = i < stepIdx || subStep >= 3;
+        const prodStr  = s.prod.toString();
+        const remStr   = s.rem.toString();
+
+        return (
+          <div key={i}>
+            {showProd && (
+              <>
+                <GridRow colMap={{
+                  [rc - prodStr.length]: { char: "−", color: "#888" },
+                  ...Object.fromEntries(prodStr.split("").map((ch, ci) => [
+                    rc - prodStr.length + 1 + ci, { char: ch, color: "#c62828" }
+                  ]))
+                }} />
+                <LineRow fromCol={rc - prodStr.length} toCol={rc} />
+              </>
+            )}
+            {showRem && (
+              <GridRow colMap={{
+                ...Object.fromEntries(remStr.split("").map((ch, ci) => [
+                  rc - remStr.length + 1 + ci, { char: ch, color: "#2e7d32" }
+                ])),
+                ...(s.next !== null && i < stepIdx
+                  ? { [rc + 1]: { char: s.next.toString(), color: "#1976D2" } }
+                  : {})
+              }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+const vis = {
+  wrap: { fontFamily: "monospace", background: "#F8FAFF", borderRadius: "12px", padding: "16px 20px", marginBottom: "16px", overflowX: "auto" },
+};
+
+
+// ── 小数点移動アニメーション（筆算形式） ──
+function DecimalShiftAnim({ divisor, dividend, phase }) {
+  const CELL = 34;  // 数字1桁の幅
+  const DOT  = 10;  // 小数点の幅
+
+  const dvrChars     = divisor.toString().split("");
+  const dvdChars     = dividend.toString().split("");
+  const dvdFullChars = [...dvdChars, ".", "0"];
+
+  // 数字セル
+  const Num = ({ ch, color="#222", opacity=1, transition="none", borderTop=false }) => (
+    <div style={{
+      width:CELL, height:CELL, flexShrink:0,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontFamily:"monospace", fontSize:"22px", fontWeight:"bold",
+      color, opacity, transition,
+      borderTop: borderTop ? "2px solid #333" : "none",
+    }}>{ch}</div>
+  );
+
+  // ）括弧（上線あり）
+  const Bracket = () => (
+    <div style={{
+      width:CELL, height:CELL, flexShrink:0,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontFamily:"monospace", fontSize:"26px", fontWeight:"bold",
+      color:"#333", borderTop:"2px solid #333",
+    }}>）</div>
+  );
+
+  // 小数点セル
+  // 外枠は固定（borderTopはここ）→ 中の点だけtranslateXで動く
+  // 矢印はSVGでオーバーレイ（phase>=1で表示）
+  const Dot = ({ moving=false, borderTop=false, showArrow=false, arrowLen=CELL }) => (
+    <div style={{
+      width:DOT, height:CELL, flexShrink:0,
+      position:"relative",
+      borderTop: borderTop ? "2px solid #333" : "none",
+    }}>
+      {/* 点（動く） */}
+      <div style={{
+        position:"absolute", inset:0,
+        display:"flex", alignItems:"flex-end", justifyContent:"center",
+        paddingBottom:"2px",
+        fontFamily:"monospace", fontSize:"20px", fontWeight:"bold",
+        color:"#e53935",
+        transition:"transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.7s ease",
+        transform: moving ? `translateX(${arrowLen + DOT}px)` : "translateX(0)",
+        opacity: moving ? 0.5 : 1,
+        zIndex:3,
+      }}>.</div>
+
+      {/* 矢印SVG（点の下に弧を描く） */}
+      {showArrow && (
+        <svg
+          width={arrowLen + DOT + 8}
+          height={CELL * 2}
+          style={{
+            position:"absolute",
+            left: DOT / 2,
+            top: 0,
+            overflow:"visible",
+            zIndex:4,
+            opacity: moving ? 1 : 0,
+            transition:"opacity 0.3s ease 0.15s",
+            pointerEvents:"none",
+          }}
+        >
+          {/* 下向き弧：制御点を下方向に */}
+          <path
+            d={`M 0,${CELL * 0.75} Q ${(arrowLen+DOT)/2},${CELL * 1.9} ${arrowLen+DOT},${CELL * 0.75}`}
+            fill="none"
+            stroke="#FF8F00"
+            strokeWidth="2.5"
+            strokeDasharray="4 2"
+          />
+          {/* 矢印の先端（右端・上向き） */}
+          <polygon
+            points={`${arrowLen+DOT},${CELL*0.55} ${arrowLen+DOT-6},${CELL*0.9} ${arrowLen+DOT+6},${CELL*0.9}`}
+            fill="#FF8F00"
+          />
+        </svg>
+      )}
+    </div>
+  );
+
+  // 除数の描画（例: ["1",".","2"] → Num + Dot + Num）
+  const renderDivisor = () => dvrChars.map((ch, i) => {
+    if (ch === ".") return (
+      <Dot key={i} moving={phase >= 1} showArrow={phase >= 1} arrowLen={CELL} />
+    );
+    return <Num key={i} ch={ch} color="#c62828" />;
+  });
+
+  // 被除数の描画（例: ["8","4",".","0"]）
+  const renderDividend = () => dvdFullChars.map((ch, i) => {
+    if (ch === ".") return (
+      <Dot key={i} moving={phase >= 1} borderTop={true} showArrow={phase >= 1} arrowLen={CELL} />
+    );
+    const isAppended = i === dvdFullChars.length - 1;
+    return (
+      <Num key={i} ch={ch}
+        color={isAppended ? "#1976D2" : "#1a237e"}
+        opacity={isAppended ? (phase >= 1 ? 1 : 0.15) : 1}
+        transition="opacity 0.5s"
+        borderTop={true}
+      />
+    );
+  });
+
+  return (
+    <div style={{display:"flex", flexDirection:"column", alignItems:"center", gap:"14px"}}>
+      <p style={{fontSize:"13px", color:"#666", margin:0, textAlign:"center"}}>
+        {phase === 0 && <>小数点を右に<b>1つ</b>動かして、整数にしよう！</>}
+        {phase === 1 && <>小数点が右に動いているよ…</>}
+        {phase === 2 && <>これで整数のわり算にできるね！</>}
+      </p>
+
+      {/* 筆算レイアウト（余白多めでアニメ見やすく） */}
+      <div style={{
+        display:"flex", alignItems:"center", fontFamily:"monospace",
+        background:"#F8FAFF", borderRadius:"10px", padding:"14px 20px",
+        position:"relative", overflow:"visible",
+      }}>
+        {renderDivisor()}
+        <Bracket />
+        {renderDividend()}
+      </div>
+
+      {phase >= 1 && (
+        <div style={{display:"flex", fontSize:"12px", color:"#1976D2", fontWeight:"bold", gap:"4px", alignItems:"center"}}>
+          <span style={{border:"1px solid #1976D2", borderRadius:"6px", padding:"2px 8px"}}>わる数 ×10</span>
+          <span style={{color:"#aaa"}}>・</span>
+          <span style={{border:"1px solid #1976D2", borderRadius:"6px", padding:"2px 8px"}}>わられる数 ×10</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── ステップの問い文を生成 ──
+function getPrompt(step, subStep, isFirst) {
+  const label = isFirst ? "" : "";
+  switch (subStep) {
+    case 0: return { tag: "たてる🏴", text: `${step.current} ÷ ${step.divisor} の答えは何？`, answer: step.q };
+    case 1: return { tag: "かける✖️", text: `${step.divisor} × ${step.q} ＝ ?`, answer: step.prod };
+    case 2: return { tag: "ひく➖", text: `${step.current} − ${step.prod} ＝ ?`, answer: step.rem };
+    case 3:
+      if (step.next === null) return null;
+      return { tag: "おろす⬇️", text: `あまり ${step.rem} の右に ${step.next} をおろすと？`, answer: step.rem * 10 + step.next };
+    default: return null;
+  }
+}
+
+const TAG_COLORS = {
+  "たてる🏴": "#1976D2",
+  "かける✖️": "#7B1FA2",
+  "ひく➖":   "#c62828",
+  "おろす⬇️": "#2e7d32",
+};
+
+// ── メインアプリ ──
+function App() {
+  const [screen, setScreen] = useState("start");
+  const [prob, setProb] = useState(null);
+  const [built, setBuilt] = useState(null);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [subStep, setSubStep] = useState(0);
+  const [input, setInput] = useState("");
+  const [feedback, setFeedback] = useState(null); // null | "ok" | "ng"
+  const [wrongCount, setWrongCount] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const [done, setDone] = useState(false);
+  const [introPhase, setIntroPhase] = useState(0); // 0=表示 1=小数点移動中 2=完了
+
+  const pickProblem = () => {
+    const p = PROBLEM_POOL[Math.floor(Math.random() * PROBLEM_POOL.length)];
+    const b = buildSteps(p.dividend, p.divisor);
+    setProb(p); setBuilt(b);
+    setStepIdx(0); setSubStep(0); setInput("");
+    setFeedback(null); setWrongCount(0); setShowHint(false); setDone(false);
+    setIntroPhase(0);
+    setScreen("intro");
+  };
+
+  const startFromIntro = () => {
+    setScreen("quiz");
+  };
+
+  // intro フェーズ自動進行
+  useEffect(() => {
+    if (screen !== "intro") return;
+    if (introPhase === 1) {
+      const t = setTimeout(() => setIntroPhase(2), 900);
+      return () => clearTimeout(t);
+    }
+  }, [screen, introPhase]);
+
+  const handleKey = (k) => {
+    if (feedback === "ok") return;
+    if (k === "⌫") setInput(v => v.slice(0, -1));
+    else setInput(v => v.length < 5 ? v + k : v);
+  };
+
+  const advanceStep = (nextSub, currentStepIdx) => {
+    const hasOroshi = built.steps[currentStepIdx].next !== null;
+    const maxSub = hasOroshi ? 3 : 2;
+    if (nextSub > maxSub) {
+      const nextStep = currentStepIdx + 1;
+      if (nextStep >= built.steps.length) {
+        setDone(true);
+      } else {
+        setStepIdx(nextStep);
+        setSubStep(0);
+      }
+    } else {
+      setSubStep(nextSub);
+    }
+    setInput(""); setFeedback(null); setWrongCount(0); setShowHint(false);
+  };
+
+  const handleSubmit = () => {
+    if (!input || feedback === "ok") return;
+    const prompt = getPrompt(built.steps[stepIdx], subStep, stepIdx === 0);
+    if (!prompt) return;
+
+    const userVal = parseInt(input);
+    if (userVal === prompt.answer) {
+      setFeedback("ok");
+      setTimeout(() => {
+        const nextSub = subStep + 1;
+        // subStep3(おろす)は自動表示のみ → 1.2秒後に自動で次へ
+        if (nextSub === 3 && built.steps[stepIdx].next !== null) {
+          setSubStep(3);
+          setInput(""); setFeedback(null); setWrongCount(0); setShowHint(false);
+        } else {
+          advanceStep(nextSub, stepIdx);
+        }
+      }, 800);
+    } else {
+      const wc = wrongCount + 1;
+      setWrongCount(wc);
+      setFeedback("ng");
+      if (wc >= 2) setShowHint(true);
+      setTimeout(() => { setFeedback(null); setInput(""); }, 900);
+    }
+  };
+
+  // おろす表示後、1.4秒で自動的に次ステップへ
+  useEffect(() => {
+    if (subStep !== 3 || !built) return;
+    const t = setTimeout(() => advanceStep(4, stepIdx), 1400);
+    return () => clearTimeout(t);
+  }, [subStep, stepIdx]);
+
+  // ── INTRO アニメーション ──
+  if (screen === "intro" && prob) {
+    const dvr = prob.divisor.toString();   // e.g. "1.2"
+    const dvd = prob.dividend.toString();  // e.g. "84"
+    const dvrDotIdx = dvr.indexOf(".");    // 除数の小数点位置（元）
+    const hasDot = dvrDotIdx !== -1;
+
+    // 各フェーズ
+    // phase0: 元の式を表示
+    // phase1: 小数点がフェードアウト→右へ移動するアニメ
+    // phase2: 変換後の式を表示 + 「筆算しよう！」ボタン
+
+    return (
+      <div style={{...s.page, background:"#EEF2FF"}}>
+        <div style={s.card}>
+          <p style={{textAlign:"center", fontSize:"13px", color:"#888", margin:"0 0 8px"}}>
+            まず、わる数を整数にしよう！
+          </p>
+
+          {/* 元の式 */}
+          <div style={{textAlign:"center", marginBottom:"20px"}}>
+            <DecimalShiftAnim
+              divisor={prob.divisor}
+              dividend={prob.dividend}
+              phase={introPhase}
+            />
+          </div>
+
+          {introPhase === 0 && (
+            <button
+              onClick={() => setIntroPhase(1)}
+              style={{...s.startBtn, fontSize:"17px", letterSpacing:"1px"}}>
+              小数点を動かす →
+            </button>
+          )}
+          {introPhase === 1 && (
+            <p style={{textAlign:"center", color:"#1976D2", fontWeight:"bold", fontSize:"16px"}}>
+              小数点を右に1つ動かしているよ…
+            </p>
+          )}
+          {introPhase === 2 && (
+            <button onClick={startFromIntro} style={{...s.startBtn, fontSize:"17px"}}>
+              筆算をはじめる！
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── START ──
+  if (screen === "start") return (
+    <div style={s.page}>
+      <div style={s.card}>
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <div style={{ fontSize: "52px" }}>📐</div>
+          <h1 style={s.title}>筆算ドリル</h1>
+          <p style={s.sub}>「たてる・かける・ひく・おろす」を<br />一手一手たしかめながらといてみよう！</p>
+        </div>
+        <div style={s.infoBox}>
+          <div style={s.infoItem}><span style={s.infoIcon}>🏴</span>たてる</div>
+          <div style={s.infoItem}><span style={s.infoIcon}>✖️</span>かける</div>
+          <div style={s.infoItem}><span style={s.infoIcon}>➖</span>ひく</div>
+          <div style={s.infoItem}><span style={s.infoIcon}>⬇️</span>おろす</div>
+        </div>
+        <p style={{ textAlign: "center", fontSize: "14px", color: "#888", marginBottom: "24px" }}>
+          整数 ÷ 小数（1以上）の筆算を練習しよう
+        </p>
+        <button onClick={pickProblem} style={s.startBtn}>はじめる！</button>
+      </div>
+    </div>
+  );
+
+  // ── DONE ──
+  if (done) return (
+    <div style={s.page}>
+      <div style={s.card}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "64px", marginBottom: "8px" }}>🏆</div>
+          <h2 style={{ fontSize: "24px", color: "#1a237e", margin: "0 0 8px" }}>完璧！</h2>
+          <p style={{ fontSize: "18px", color: "#555", margin: "0 0 24px" }}>
+            {prob.dividend} ÷ {prob.divisor} ＝ <strong style={{ fontSize: "24px", color: "#1976D2" }}>{built.quotient}</strong>
+          </p>
+          <LongDivisionVisual
+            intDividend={built.intDividend}
+            intDivisor={built.intDivisor}
+            steps={built.steps}
+            stepIdx={built.steps.length - 1}
+            subStep={4}
+          />
+          <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+            <button onClick={pickProblem} style={{ ...s.startBtn, flex: 1 }}>つぎの問題</button>
+            <button onClick={() => setScreen("start")} style={{ ...s.backBtn, flex: 1 }}>トップへ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── QUIZ ──
+  const currentStep = built.steps[stepIdx];
+  const hasOroshi = currentStep.next !== null;
+  const maxSub = hasOroshi ? 3 : 2;
+  const prompt = getPrompt(currentStep, subStep, stepIdx === 0);
+  const tagColor = TAG_COLORS[prompt?.tag] || "#1976D2";
+  const totalSubSteps = built.steps.reduce((acc, st) => acc + (st.next !== null ? 4 : 3), 0);
+  const completedSubSteps = built.steps.slice(0, stepIdx).reduce((acc, st) => acc + (st.next !== null ? 4 : 3), 0) + subStep;
+  const progress = Math.round((completedSubSteps / totalSubSteps) * 100);
+
+  return (
+    <div style={{ ...s.page, background: "#EEF2FF" }}>
+      <div style={s.quizCard}>
+        {/* ヘッダー */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <span style={{ fontSize: "15px", color: "#555", fontWeight: "bold" }}>
+            {prob.dividend} ÷ {prob.divisor}
+          </span>
+          <span style={{ fontSize: "13px", color: "#888" }}>進行中…</span>
+        </div>
+
+        {/* プログレスバー */}
+        <div style={s.progBg}>
+          <div style={{ ...s.progFill, width: `${progress}%` }} />
+        </div>
+
+        {/* 筆算ビジュアル */}
+        <LongDivisionVisual
+          intDividend={built.intDividend}
+          intDivisor={built.intDivisor}
+          steps={built.steps}
+          stepIdx={stepIdx}
+          subStep={subStep}
+        />
+
+        {/* おろす：自動表示のみ */}
+        {subStep === 3 && currentStep.next !== null ? (
+          <div style={{ ...s.promptBox, borderColor: "#2e7d32", textAlign:"center" }}>
+            <span style={{ ...s.tag, background: "#2e7d32" }}>おろす⬇️</span>
+            <p style={{ ...s.promptText, color:"#2e7d32" }}>
+              おろして <strong>{currentStep.rem * 10 + currentStep.next}</strong> ！
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* 問いかけ */}
+            <div style={{ ...s.promptBox, borderColor: tagColor }}>
+              <span style={{ ...s.tag, background: tagColor }}>{prompt.tag}</span>
+              <p style={s.promptText}>{prompt.text}</p>
+            </div>
+
+            {/* フィードバック */}
+            {feedback === "ok" && <div style={s.okMsg}>✅ 正解！</div>}
+            {feedback === "ng" && <div style={s.ngMsg}>❌ もう一度！</div>}
+
+            {/* ヒント */}
+            {showHint && !feedback && (
+              <div style={s.hintBox}>
+                💡 ヒント：答えは <strong>{prompt.answer}</strong> だよ。もう一度いれてみよう！
+              </div>
+            )}
+
+            {/* 答え表示欄 */}
+            <div style={{
+              ...s.ansBox,
+              borderColor: feedback === "ok" ? "#4CAF50" : feedback === "ng" ? "#e53935" : tagColor,
+              background: feedback === "ok" ? "#E8F5E9" : feedback === "ng" ? "#FFEBEE" : "#fff",
+            }}>
+              {input || <span style={{ color: "#ccc" }}>？</span>}
+            </div>
+
+            {/* テンキー */}
+            <div style={s.numpad}>
+              {["7","8","9","4","5","6","1","2","3","","0","⌫"].map((k, i) => (
+                <button key={i} onClick={() => k && handleKey(k)} style={{
+                  ...s.numKey,
+                  background: k === "⌫" ? "#ffcdd2" : k === "" ? "transparent" : "#fff",
+                  color: k === "⌫" ? "#c62828" : "#333",
+                  border: k === "" ? "none" : `2px solid ${k === "⌫" ? "#ef9a9a" : "#ddd"}`,
+                  cursor: k ? "pointer" : "default",
+                  boxShadow: k ? "0 2px 4px rgba(0,0,0,0.08)" : "none",
+                }}>{k}</button>
+              ))}
+            </div>
+
+            {/* 決定ボタン */}
+            <button
+              onClick={handleSubmit}
+              disabled={!input || feedback === "ok"}
+              style={{
+                ...s.submitBtn,
+                background: input && !feedback ? tagColor : "#ccc",
+                cursor: input && !feedback ? "pointer" : "not-allowed",
+              }}
+            >
+              こたえる
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── スタイル ──
+const s = {
+  page: { minHeight: "100vh", background: "#F0F4FF", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "16px", fontFamily: "'Hiragino Kaku Gothic ProN','Meiryo',sans-serif", boxSizing: "border-box" },
+  card: { background: "#fff", borderRadius: "20px", padding: "28px 24px", width: "100%", maxWidth: "420px", boxShadow: "0 4px 24px rgba(0,0,0,0.10)" },
+  quizCard: { background: "#fff", borderRadius: "20px", padding: "20px 18px 24px", width: "100%", maxWidth: "420px", boxShadow: "0 4px 24px rgba(0,0,0,0.10)" },
+  title: { fontSize: "26px", fontWeight: "bold", margin: "8px 0 6px", color: "#1a237e" },
+  sub: { fontSize: "14px", color: "#666", lineHeight: 1.7, margin: 0 },
+  infoBox: { display: "flex", justifyContent: "space-around", background: "#EEF2FF", borderRadius: "12px", padding: "14px 8px", marginBottom: "16px" },
+  infoItem: { display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", fontSize: "13px", color: "#444", fontWeight: "bold" },
+  infoIcon: { fontSize: "22px" },
+  startBtn: { display: "block", width: "100%", padding: "16px", borderRadius: "14px", border: "none", background: "#1976D2", color: "#fff", fontSize: "20px", fontWeight: "bold", cursor: "pointer", letterSpacing: "2px" },
+  backBtn: { display: "block", padding: "16px", borderRadius: "14px", border: "2px solid #ccc", background: "#fff", color: "#555", fontSize: "16px", fontWeight: "bold", cursor: "pointer" },
+  progBg: { height: "8px", background: "#eee", borderRadius: "4px", marginBottom: "14px", overflow: "hidden" },
+  progFill: { height: "100%", borderRadius: "4px", background: "#1976D2", transition: "width 0.4s ease" },
+  promptBox: { border: "2px solid", borderRadius: "12px", padding: "12px 14px", marginBottom: "10px" },
+  tag: { display: "inline-block", color: "#fff", fontSize: "13px", fontWeight: "bold", borderRadius: "6px", padding: "2px 10px", marginBottom: "6px" },
+  promptText: { fontSize: "18px", fontWeight: "bold", color: "#222", margin: 0 },
+  okMsg: { textAlign: "center", color: "#2e7d32", fontWeight: "bold", fontSize: "18px", marginBottom: "6px" },
+  ngMsg: { textAlign: "center", color: "#c62828", fontWeight: "bold", fontSize: "18px", marginBottom: "6px" },
+  hintBox: { background: "#FFF8E1", border: "1px solid #FFE082", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", color: "#555", marginBottom: "8px" },
+  ansBox: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "52px", fontSize: "28px", fontWeight: "bold", color: "#333", border: "3px solid", borderRadius: "12px", marginBottom: "12px", transition: "all 0.3s" },
+  numpad: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "12px" },
+  numKey: { padding: "14px", fontSize: "22px", fontWeight: "bold", borderRadius: "10px", textAlign: "center" },
+  submitBtn: { display: "block", width: "100%", padding: "14px", borderRadius: "12px", border: "none", color: "#fff", fontSize: "18px", fontWeight: "bold", letterSpacing: "2px", transition: "background 0.2s" },
+};
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

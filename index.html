@@ -3,40 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>筆算ドリル</title>
+  <title>筆算ドリル（発展版）</title>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #F0F4FF; }
-  </style>
+  <style>* { box-sizing: border-box; margin: 0; padding: 0; } body { background: #F0F4FF; }</style>
 </head>
 <body>
   <div id="root"></div>
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-
-// ── 問題プール（整数÷小数、割り切れる問題のみ） ──
-const PROBLEM_POOL = [
-  {dividend:18,divisor:1.5,answer:12},{dividend:33,divisor:1.5,answer:22},{dividend:48,divisor:1.5,answer:32},
-  {dividend:30,divisor:2.5,answer:12},{dividend:55,divisor:2.5,answer:22},{dividend:80,divisor:2.5,answer:32},
-  {dividend:18,divisor:1.2,answer:15},{dividend:21,divisor:1.5,answer:14},{dividend:30,divisor:1.2,answer:25},
-  {dividend:21,divisor:1.4,answer:15},{dividend:35,divisor:1.4,answer:25},{dividend:42,divisor:3.5,answer:12},
-  {dividend:24,divisor:1.6,answer:15},{dividend:40,divisor:1.6,answer:25},{dividend:56,divisor:1.6,answer:35},
-  {dividend:24,divisor:1.5,answer:16},{dividend:27,divisor:1.8,answer:15},{dividend:39,divisor:1.5,answer:26},
-  {dividend:35,divisor:2.5,answer:14},{dividend:60,divisor:2.5,answer:24},{dividend:85,divisor:2.5,answer:34},
-  {dividend:27,divisor:1.5,answer:18},{dividend:36,divisor:2.4,answer:15},{dividend:42,divisor:1.5,answer:28},
-  {dividend:49,divisor:3.5,answer:14},{dividend:84,divisor:3.5,answer:24},{dividend:40,divisor:2.5,answer:16},
-  {dividend:65,divisor:2.5,answer:26},{dividend:90,divisor:2.5,answer:36},{dividend:48,divisor:3.2,answer:15},
-  {dividend:80,divisor:3.2,answer:25},{dividend:63,divisor:4.5,answer:14},{dividend:45,divisor:2.5,answer:18},
-  {dividend:70,divisor:2.5,answer:28},{dividend:95,divisor:2.5,answer:38},{dividend:56,divisor:3.5,answer:16},
-  {dividend:91,divisor:3.5,answer:26},{dividend:72,divisor:4.5,answer:16},{dividend:63,divisor:3.5,answer:18},
-  {dividend:98,divisor:3.5,answer:28},{dividend:81,divisor:4.5,answer:18},{dividend:10,divisor:2.5,answer:4},
-  {dividend:12,divisor:1.2,answer:10},{dividend:12,divisor:1.5,answer:8},{dividend:12,divisor:2.4,answer:5},
-  {dividend:14,divisor:1.4,answer:10},{dividend:15,divisor:1.5,answer:10},{dividend:15,divisor:2.5,answer:6},
-  {dividend:16,divisor:1.6,answer:10},
+// ── 問題プール ──
+const POOL_L1=[{"dividend":10.8,"divisor":1.2,"answer":9},{"dividend":12,"divisor":1.2,"answer":10},{"dividend":14.4,"divisor":1.2,"answer":12},{"dividend":16.8,"divisor":1.2,"answer":14},{"dividend":18,"divisor":1.2,"answer":15},{"dividend":19.2,"divisor":1.2,"answer":16},{"dividend":21.6,"divisor":1.2,"answer":18},{"dividend":24,"divisor":1.2,"answer":20},{"dividend":26.4,"divisor":1.2,"answer":22},{"dividend":28.8,"divisor":1.2,"answer":24},{"dividend":30,"divisor":1.2,"answer":25},{"dividend":33.6,"divisor":1.2,"answer":28},{"dividend":36,"divisor":1.2,"answer":30},{"dividend":11.2,"divisor":1.4,"answer":8},{"dividend":12.6,"divisor":1.4,"answer":9},{"dividend":14,"divisor":1.4,"answer":10},{"dividend":16.8,"divisor":1.4,"answer":12},{"dividend":19.6,"divisor":1.4,"answer":14},{"dividend":21,"divisor":1.4,"answer":15},{"dividend":22.4,"divisor":1.4,"answer":16},{"dividend":25.2,"divisor":1.4,"answer":18},{"dividend":28,"divisor":1.4,"answer":20},{"dividend":30.8,"divisor":1.4,"answer":22},{"dividend":33.6,"divisor":1.4,"answer":24},{"dividend":35,"divisor":1.4,"answer":25},{"dividend":39.2,"divisor":1.4,"answer":28},{"dividend":42,"divisor":1.4,"answer":30},{"dividend":10.5,"divisor":1.5,"answer":7},{"dividend":12,"divisor":1.5,"answer":8},{"dividend":13.5,"divisor":1.5,"answer":9},{"dividend":15,"divisor":1.5,"answer":10},{"dividend":18,"divisor":1.5,"answer":12},{"dividend":21,"divisor":1.5,"answer":14},{"dividend":22.5,"divisor":1.5,"answer":15},{"dividend":24,"divisor":1.5,"answer":16},{"dividend":27,"divisor":1.5,"answer":18},{"dividend":30,"divisor":1.5,"answer":20},{"dividend":33,"divisor":1.5,"answer":22},{"dividend":36,"divisor":1.5,"answer":24},{"dividend":37.5,"divisor":1.5,"answer":25},{"dividend":42,"divisor":1.5,"answer":28},{"dividend":45,"divisor":1.5,"answer":30},{"dividend":11.2,"divisor":1.6,"answer":7},{"dividend":12.8,"divisor":1.6,"answer":8},{"dividend":14.4,"divisor":1.6,"answer":9},{"dividend":16,"divisor":1.6,"answer":10},{"dividend":19.2,"divisor":1.6,"answer":12},{"dividend":22.4,"divisor":1.6,"answer":14},{"dividend":24,"divisor":1.6,"answer":15},{"dividend":25.6,"divisor":1.6,"answer":16},{"dividend":28.8,"divisor":1.6,"answer":18},{"dividend":32,"divisor":1.6,"answer":20},{"dividend":35.2,"divisor":1.6,"answer":22},{"dividend":38.4,"divisor":1.6,"answer":24},{"dividend":40,"divisor":1.6,"answer":25},{"dividend":44.8,"divisor":1.6,"answer":28},{"dividend":48,"divisor":1.6,"answer":30},{"dividend":10.8,"divisor":1.8,"answer":6},{"dividend":12.6,"divisor":1.8,"answer":7},{"dividend":14.4,"divisor":1.8,"answer":8}];
+const POOL_L2=[{"dividend":60,"divisor":12,"answer":5},{"dividend":72,"divisor":12,"answer":6},{"dividend":84,"divisor":12,"answer":7},{"dividend":96,"divisor":12,"answer":8},{"dividend":108,"divisor":12,"answer":9},{"dividend":120,"divisor":12,"answer":10},{"dividend":132,"divisor":12,"answer":11},{"dividend":144,"divisor":12,"answer":12},{"dividend":156,"divisor":12,"answer":13},{"dividend":168,"divisor":12,"answer":14},{"dividend":180,"divisor":12,"answer":15},{"dividend":70,"divisor":14,"answer":5},{"dividend":84,"divisor":14,"answer":6},{"dividend":98,"divisor":14,"answer":7},{"dividend":112,"divisor":14,"answer":8},{"dividend":126,"divisor":14,"answer":9},{"dividend":140,"divisor":14,"answer":10},{"dividend":154,"divisor":14,"answer":11},{"dividend":168,"divisor":14,"answer":12},{"dividend":182,"divisor":14,"answer":13},{"dividend":196,"divisor":14,"answer":14},{"dividend":210,"divisor":14,"answer":15},{"dividend":75,"divisor":15,"answer":5},{"dividend":90,"divisor":15,"answer":6},{"dividend":105,"divisor":15,"answer":7},{"dividend":120,"divisor":15,"answer":8},{"dividend":135,"divisor":15,"answer":9},{"dividend":150,"divisor":15,"answer":10},{"dividend":165,"divisor":15,"answer":11},{"dividend":180,"divisor":15,"answer":12},{"dividend":195,"divisor":15,"answer":13},{"dividend":210,"divisor":15,"answer":14},{"dividend":225,"divisor":15,"answer":15},{"dividend":80,"divisor":16,"answer":5},{"dividend":96,"divisor":16,"answer":6},{"dividend":112,"divisor":16,"answer":7},{"dividend":128,"divisor":16,"answer":8},{"dividend":144,"divisor":16,"answer":9},{"dividend":160,"divisor":16,"answer":10},{"dividend":176,"divisor":16,"answer":11},{"dividend":192,"divisor":16,"answer":12},{"dividend":208,"divisor":16,"answer":13},{"dividend":224,"divisor":16,"answer":14},{"dividend":240,"divisor":16,"answer":15},{"dividend":90,"divisor":18,"answer":5},{"dividend":108,"divisor":18,"answer":6},{"dividend":126,"divisor":18,"answer":7},{"dividend":144,"divisor":18,"answer":8},{"dividend":162,"divisor":18,"answer":9},{"dividend":180,"divisor":18,"answer":10},{"dividend":198,"divisor":18,"answer":11},{"dividend":216,"divisor":18,"answer":12},{"dividend":234,"divisor":18,"answer":13},{"dividend":252,"divisor":18,"answer":14},{"dividend":270,"divisor":18,"answer":15},{"dividend":100,"divisor":20,"answer":5},{"dividend":120,"divisor":20,"answer":6},{"dividend":140,"divisor":20,"answer":7},{"dividend":160,"divisor":20,"answer":8},{"dividend":180,"divisor":20,"answer":9}];
+const POOL_L3=[{"dividend":132,"divisor":12,"answer":11},{"dividend":144,"divisor":12,"answer":12},{"dividend":156,"divisor":12,"answer":13},{"dividend":168,"divisor":12,"answer":14},{"dividend":180,"divisor":12,"answer":15},{"dividend":192,"divisor":12,"answer":16},{"dividend":216,"divisor":12,"answer":18},{"dividend":240,"divisor":12,"answer":20},{"dividend":264,"divisor":12,"answer":22},{"dividend":288,"divisor":12,"answer":24},{"dividend":300,"divisor":12,"answer":25},{"dividend":154,"divisor":14,"answer":11},{"dividend":168,"divisor":14,"answer":12},{"dividend":182,"divisor":14,"answer":13},{"dividend":196,"divisor":14,"answer":14},{"dividend":210,"divisor":14,"answer":15},{"dividend":224,"divisor":14,"answer":16},{"dividend":252,"divisor":14,"answer":18},{"dividend":280,"divisor":14,"answer":20},{"dividend":308,"divisor":14,"answer":22},{"dividend":336,"divisor":14,"answer":24},{"dividend":350,"divisor":14,"answer":25},{"dividend":165,"divisor":15,"answer":11},{"dividend":180,"divisor":15,"answer":12},{"dividend":195,"divisor":15,"answer":13},{"dividend":210,"divisor":15,"answer":14},{"dividend":225,"divisor":15,"answer":15},{"dividend":240,"divisor":15,"answer":16},{"dividend":270,"divisor":15,"answer":18},{"dividend":300,"divisor":15,"answer":20},{"dividend":330,"divisor":15,"answer":22},{"dividend":360,"divisor":15,"answer":24},{"dividend":375,"divisor":15,"answer":25},{"dividend":176,"divisor":16,"answer":11},{"dividend":192,"divisor":16,"answer":12},{"dividend":208,"divisor":16,"answer":13},{"dividend":224,"divisor":16,"answer":14},{"dividend":240,"divisor":16,"answer":15},{"dividend":256,"divisor":16,"answer":16},{"dividend":288,"divisor":16,"answer":18},{"dividend":320,"divisor":16,"answer":20},{"dividend":352,"divisor":16,"answer":22},{"dividend":384,"divisor":16,"answer":24},{"dividend":400,"divisor":16,"answer":25},{"dividend":198,"divisor":18,"answer":11},{"dividend":216,"divisor":18,"answer":12},{"dividend":234,"divisor":18,"answer":13},{"dividend":252,"divisor":18,"answer":14},{"dividend":270,"divisor":18,"answer":15},{"dividend":288,"divisor":18,"answer":16},{"dividend":324,"divisor":18,"answer":18},{"dividend":360,"divisor":18,"answer":20},{"dividend":396,"divisor":18,"answer":22},{"dividend":432,"divisor":18,"answer":24},{"dividend":450,"divisor":18,"answer":25},{"dividend":220,"divisor":20,"answer":11},{"dividend":240,"divisor":20,"answer":12},{"dividend":260,"divisor":20,"answer":13},{"dividend":280,"divisor":20,"answer":14},{"dividend":300,"divisor":20,"answer":15}];
+const POOL_L4=[{"dividend":13.2,"divisor":1.2,"answer":11},{"dividend":14.4,"divisor":1.2,"answer":12},{"dividend":15.6,"divisor":1.2,"answer":13},{"dividend":16.8,"divisor":1.2,"answer":14},{"dividend":18,"divisor":1.2,"answer":15},{"dividend":19.2,"divisor":1.2,"answer":16},{"dividend":21.6,"divisor":1.2,"answer":18},{"dividend":24,"divisor":1.2,"answer":20},{"dividend":26.4,"divisor":1.2,"answer":22},{"dividend":28.8,"divisor":1.2,"answer":24},{"dividend":30,"divisor":1.2,"answer":25},{"dividend":36,"divisor":1.2,"answer":30},{"dividend":15.4,"divisor":1.4,"answer":11},{"dividend":16.8,"divisor":1.4,"answer":12},{"dividend":18.2,"divisor":1.4,"answer":13},{"dividend":19.6,"divisor":1.4,"answer":14},{"dividend":21,"divisor":1.4,"answer":15},{"dividend":22.4,"divisor":1.4,"answer":16},{"dividend":25.2,"divisor":1.4,"answer":18},{"dividend":28,"divisor":1.4,"answer":20},{"dividend":30.8,"divisor":1.4,"answer":22},{"dividend":33.6,"divisor":1.4,"answer":24},{"dividend":35,"divisor":1.4,"answer":25},{"dividend":42,"divisor":1.4,"answer":30},{"dividend":16.5,"divisor":1.5,"answer":11},{"dividend":18,"divisor":1.5,"answer":12},{"dividend":19.5,"divisor":1.5,"answer":13},{"dividend":21,"divisor":1.5,"answer":14},{"dividend":22.5,"divisor":1.5,"answer":15},{"dividend":24,"divisor":1.5,"answer":16},{"dividend":27,"divisor":1.5,"answer":18},{"dividend":30,"divisor":1.5,"answer":20},{"dividend":33,"divisor":1.5,"answer":22},{"dividend":36,"divisor":1.5,"answer":24},{"dividend":37.5,"divisor":1.5,"answer":25},{"dividend":45,"divisor":1.5,"answer":30},{"dividend":17.6,"divisor":1.6,"answer":11},{"dividend":19.2,"divisor":1.6,"answer":12},{"dividend":20.8,"divisor":1.6,"answer":13},{"dividend":22.4,"divisor":1.6,"answer":14},{"dividend":24,"divisor":1.6,"answer":15},{"dividend":25.6,"divisor":1.6,"answer":16},{"dividend":28.8,"divisor":1.6,"answer":18},{"dividend":32,"divisor":1.6,"answer":20},{"dividend":35.2,"divisor":1.6,"answer":22},{"dividend":38.4,"divisor":1.6,"answer":24},{"dividend":40,"divisor":1.6,"answer":25},{"dividend":48,"divisor":1.6,"answer":30},{"dividend":19.8,"divisor":1.8,"answer":11},{"dividend":21.6,"divisor":1.8,"answer":12},{"dividend":23.4,"divisor":1.8,"answer":13},{"dividend":25.2,"divisor":1.8,"answer":14},{"dividend":27,"divisor":1.8,"answer":15},{"dividend":28.8,"divisor":1.8,"answer":16},{"dividend":32.4,"divisor":1.8,"answer":18},{"dividend":36,"divisor":1.8,"answer":20},{"dividend":39.6,"divisor":1.8,"answer":22},{"dividend":43.2,"divisor":1.8,"answer":24},{"dividend":45,"divisor":1.8,"answer":25},{"dividend":54,"divisor":1.8,"answer":30}];
+const POOL_L5=[{"dividend": 42, "divisor": 10.5, "answer": 4}, {"dividend": 52.5, "divisor": 10.5, "answer": 5}, {"dividend": 63, "divisor": 10.5, "answer": 6}, {"dividend": 73.5, "divisor": 10.5, "answer": 7}, {"dividend": 84, "divisor": 10.5, "answer": 8}, {"dividend": 94.5, "divisor": 10.5, "answer": 9}, {"dividend": 105, "divisor": 10.5, "answer": 10}, {"dividend": 126, "divisor": 10.5, "answer": 12}, {"dividend": 147, "divisor": 10.5, "answer": 14}, {"dividend": 157.5, "divisor": 10.5, "answer": 15}, {"dividend": 168, "divisor": 10.5, "answer": 16}, {"dividend": 189, "divisor": 10.5, "answer": 18}, {"dividend": 210, "divisor": 10.5, "answer": 20}, {"dividend": 252, "divisor": 10.5, "answer": 24}, {"dividend": 262.5, "divisor": 10.5, "answer": 25}, {"dividend": 315, "divisor": 10.5, "answer": 30}, {"dividend": 420, "divisor": 10.5, "answer": 40}, {"dividend": 525, "divisor": 10.5, "answer": 50}, {"dividend": 50, "divisor": 12.5, "answer": 4}, {"dividend": 62.5, "divisor": 12.5, "answer": 5}, {"dividend": 75, "divisor": 12.5, "answer": 6}, {"dividend": 87.5, "divisor": 12.5, "answer": 7}, {"dividend": 100, "divisor": 12.5, "answer": 8}, {"dividend": 112.5, "divisor": 12.5, "answer": 9}, {"dividend": 125, "divisor": 12.5, "answer": 10}, {"dividend": 150, "divisor": 12.5, "answer": 12}, {"dividend": 175, "divisor": 12.5, "answer": 14}, {"dividend": 187.5, "divisor": 12.5, "answer": 15}, {"dividend": 200, "divisor": 12.5, "answer": 16}, {"dividend": 225, "divisor": 12.5, "answer": 18}, {"dividend": 250, "divisor": 12.5, "answer": 20}, {"dividend": 300, "divisor": 12.5, "answer": 24}, {"dividend": 312.5, "divisor": 12.5, "answer": 25}, {"dividend": 375, "divisor": 12.5, "answer": 30}, {"dividend": 500, "divisor": 12.5, "answer": 40}, {"dividend": 625, "divisor": 12.5, "answer": 50}, {"dividend": 62, "divisor": 15.5, "answer": 4}, {"dividend": 77.5, "divisor": 15.5, "answer": 5}, {"dividend": 93, "divisor": 15.5, "answer": 6}, {"dividend": 108.5, "divisor": 15.5, "answer": 7}, {"dividend": 124, "divisor": 15.5, "answer": 8}, {"dividend": 139.5, "divisor": 15.5, "answer": 9}, {"dividend": 155, "divisor": 15.5, "answer": 10}, {"dividend": 186, "divisor": 15.5, "answer": 12}, {"dividend": 217, "divisor": 15.5, "answer": 14}, {"dividend": 232.5, "divisor": 15.5, "answer": 15}, {"dividend": 248, "divisor": 15.5, "answer": 16}, {"dividend": 279, "divisor": 15.5, "answer": 18}, {"dividend": 310, "divisor": 15.5, "answer": 20}, {"dividend": 372, "divisor": 15.5, "answer": 24}, {"dividend": 387.5, "divisor": 15.5, "answer": 25}, {"dividend": 465, "divisor": 15.5, "answer": 30}, {"dividend": 620, "divisor": 15.5, "answer": 40}, {"dividend": 775, "divisor": 15.5, "answer": 50}, {"dividend": 66, "divisor": 16.5, "answer": 4}, {"dividend": 82.5, "divisor": 16.5, "answer": 5}, {"dividend": 99, "divisor": 16.5, "answer": 6}, {"dividend": 115.5, "divisor": 16.5, "answer": 7}, {"dividend": 132, "divisor": 16.5, "answer": 8}, {"dividend": 148.5, "divisor": 16.5, "answer": 9}];
+const POOL_LA=[{"dividend":0.16,"divisor":0.04,"answer":4},{"dividend":0.2,"divisor":0.04,"answer":5},{"dividend":0.24,"divisor":0.04,"answer":6},{"dividend":0.32,"divisor":0.04,"answer":8},{"dividend":0.4,"divisor":0.04,"answer":10},{"dividend":0.48,"divisor":0.04,"answer":12},{"dividend":0.56,"divisor":0.04,"answer":14},{"dividend":0.6,"divisor":0.04,"answer":15},{"dividend":0.64,"divisor":0.04,"answer":16},{"dividend":0.72,"divisor":0.04,"answer":18},{"dividend":0.8,"divisor":0.04,"answer":20},{"dividend":0.96,"divisor":0.04,"answer":24},{"dividend":1,"divisor":0.04,"answer":25},{"dividend":0.2,"divisor":0.05,"answer":4},{"dividend":0.25,"divisor":0.05,"answer":5},{"dividend":0.3,"divisor":0.05,"answer":6},{"dividend":0.4,"divisor":0.05,"answer":8},{"dividend":0.5,"divisor":0.05,"answer":10},{"dividend":0.6,"divisor":0.05,"answer":12},{"dividend":0.7,"divisor":0.05,"answer":14},{"dividend":0.75,"divisor":0.05,"answer":15},{"dividend":0.8,"divisor":0.05,"answer":16},{"dividend":0.9,"divisor":0.05,"answer":18},{"dividend":1,"divisor":0.05,"answer":20},{"dividend":1.2,"divisor":0.05,"answer":24},{"dividend":1.25,"divisor":0.05,"answer":25},{"dividend":0.24,"divisor":0.06,"answer":4},{"dividend":0.3,"divisor":0.06,"answer":5},{"dividend":0.36,"divisor":0.06,"answer":6},{"dividend":0.48,"divisor":0.06,"answer":8},{"dividend":0.6,"divisor":0.06,"answer":10},{"dividend":0.72,"divisor":0.06,"answer":12},{"dividend":0.84,"divisor":0.06,"answer":14},{"dividend":0.9,"divisor":0.06,"answer":15},{"dividend":0.96,"divisor":0.06,"answer":16},{"dividend":1.08,"divisor":0.06,"answer":18},{"dividend":1.2,"divisor":0.06,"answer":20},{"dividend":1.44,"divisor":0.06,"answer":24},{"dividend":1.5,"divisor":0.06,"answer":25},{"dividend":0.32,"divisor":0.08,"answer":4},{"dividend":0.4,"divisor":0.08,"answer":5},{"dividend":0.48,"divisor":0.08,"answer":6},{"dividend":0.64,"divisor":0.08,"answer":8},{"dividend":0.8,"divisor":0.08,"answer":10},{"dividend":0.96,"divisor":0.08,"answer":12},{"dividend":1.12,"divisor":0.08,"answer":14},{"dividend":1.2,"divisor":0.08,"answer":15},{"dividend":1.28,"divisor":0.08,"answer":16},{"dividend":1.44,"divisor":0.08,"answer":18},{"dividend":1.6,"divisor":0.08,"answer":20},{"dividend":1.92,"divisor":0.08,"answer":24},{"dividend":2,"divisor":0.08,"answer":25},{"dividend":0.48,"divisor":0.12,"answer":4},{"dividend":0.6,"divisor":0.12,"answer":5},{"dividend":0.72,"divisor":0.12,"answer":6},{"dividend":0.96,"divisor":0.12,"answer":8},{"dividend":1.2,"divisor":0.12,"answer":10},{"dividend":1.44,"divisor":0.12,"answer":12},{"dividend":1.68,"divisor":0.12,"answer":14},{"dividend":1.8,"divisor":0.12,"answer":15}];
+const POOL_LB=[{"dividend":2.5,"divisor":1.25,"answer":2},{"dividend":5,"divisor":1.25,"answer":4},{"dividend":6.25,"divisor":1.25,"answer":5},{"dividend":7.5,"divisor":1.25,"answer":6},{"dividend":10,"divisor":1.25,"answer":8},{"dividend":12.5,"divisor":1.25,"answer":10},{"dividend":15,"divisor":1.25,"answer":12},{"dividend":17.5,"divisor":1.25,"answer":14},{"dividend":18.75,"divisor":1.25,"answer":15},{"dividend":20,"divisor":1.25,"answer":16},{"dividend":25,"divisor":1.25,"answer":20},{"dividend":30,"divisor":1.25,"answer":24},{"dividend":31.25,"divisor":1.25,"answer":25},{"dividend":62.5,"divisor":1.25,"answer":50},{"dividend":125,"divisor":1.25,"answer":100},{"dividend":3,"divisor":1.5,"answer":2},{"dividend":6,"divisor":1.5,"answer":4},{"dividend":7.5,"divisor":1.5,"answer":5},{"dividend":9,"divisor":1.5,"answer":6},{"dividend":12,"divisor":1.5,"answer":8},{"dividend":15,"divisor":1.5,"answer":10},{"dividend":18,"divisor":1.5,"answer":12},{"dividend":21,"divisor":1.5,"answer":14},{"dividend":22.5,"divisor":1.5,"answer":15},{"dividend":24,"divisor":1.5,"answer":16},{"dividend":30,"divisor":1.5,"answer":20},{"dividend":36,"divisor":1.5,"answer":24},{"dividend":37.5,"divisor":1.5,"answer":25},{"dividend":75,"divisor":1.5,"answer":50},{"dividend":150,"divisor":1.5,"answer":100},{"dividend":3.5,"divisor":1.75,"answer":2},{"dividend":7,"divisor":1.75,"answer":4},{"dividend":8.75,"divisor":1.75,"answer":5},{"dividend":10.5,"divisor":1.75,"answer":6},{"dividend":14,"divisor":1.75,"answer":8},{"dividend":17.5,"divisor":1.75,"answer":10},{"dividend":21,"divisor":1.75,"answer":12},{"dividend":24.5,"divisor":1.75,"answer":14},{"dividend":26.25,"divisor":1.75,"answer":15},{"dividend":28,"divisor":1.75,"answer":16},{"dividend":35,"divisor":1.75,"answer":20},{"dividend":42,"divisor":1.75,"answer":24},{"dividend":43.75,"divisor":1.75,"answer":25},{"dividend":87.5,"divisor":1.75,"answer":50},{"dividend":175,"divisor":1.75,"answer":100},{"dividend":4.5,"divisor":2.25,"answer":2},{"dividend":9,"divisor":2.25,"answer":4},{"dividend":11.25,"divisor":2.25,"answer":5},{"dividend":13.5,"divisor":2.25,"answer":6},{"dividend":18,"divisor":2.25,"answer":8},{"dividend":22.5,"divisor":2.25,"answer":10},{"dividend":27,"divisor":2.25,"answer":12},{"dividend":31.5,"divisor":2.25,"answer":14},{"dividend":33.75,"divisor":2.25,"answer":15},{"dividend":36,"divisor":2.25,"answer":16},{"dividend":45,"divisor":2.25,"answer":20},{"dividend":54,"divisor":2.25,"answer":24},{"dividend":56.25,"divisor":2.25,"answer":25},{"dividend":112.5,"divisor":2.25,"answer":50},{"dividend":225,"divisor":2.25,"answer":100}];
+const POOL_LC=[{"dividend": 21, "divisor": 10.5, "answer": 2}, {"dividend": 31.5, "divisor": 10.5, "answer": 3}, {"dividend": 42, "divisor": 10.5, "answer": 4}, {"dividend": 52.5, "divisor": 10.5, "answer": 5}, {"dividend": 63, "divisor": 10.5, "answer": 6}, {"dividend": 73.5, "divisor": 10.5, "answer": 7}, {"dividend": 84, "divisor": 10.5, "answer": 8}, {"dividend": 94.5, "divisor": 10.5, "answer": 9}, {"dividend": 105, "divisor": 10.5, "answer": 10}, {"dividend": 126, "divisor": 10.5, "answer": 12}, {"dividend": 147, "divisor": 10.5, "answer": 14}, {"dividend": 157.5, "divisor": 10.5, "answer": 15}, {"dividend": 168, "divisor": 10.5, "answer": 16}, {"dividend": 189, "divisor": 10.5, "answer": 18}, {"dividend": 210, "divisor": 10.5, "answer": 20}, {"dividend": 252, "divisor": 10.5, "answer": 24}, {"dividend": 262.5, "divisor": 10.5, "answer": 25}, {"dividend": 315, "divisor": 10.5, "answer": 30}, {"dividend": 420, "divisor": 10.5, "answer": 40}, {"dividend": 525, "divisor": 10.5, "answer": 50}, {"dividend": 1050, "divisor": 10.5, "answer": 100}, {"dividend": 23, "divisor": 11.5, "answer": 2}, {"dividend": 34.5, "divisor": 11.5, "answer": 3}, {"dividend": 46, "divisor": 11.5, "answer": 4}, {"dividend": 57.5, "divisor": 11.5, "answer": 5}, {"dividend": 69, "divisor": 11.5, "answer": 6}, {"dividend": 80.5, "divisor": 11.5, "answer": 7}, {"dividend": 92, "divisor": 11.5, "answer": 8}, {"dividend": 103.5, "divisor": 11.5, "answer": 9}, {"dividend": 115, "divisor": 11.5, "answer": 10}, {"dividend": 138, "divisor": 11.5, "answer": 12}, {"dividend": 161, "divisor": 11.5, "answer": 14}, {"dividend": 172.5, "divisor": 11.5, "answer": 15}, {"dividend": 184, "divisor": 11.5, "answer": 16}, {"dividend": 207, "divisor": 11.5, "answer": 18}, {"dividend": 230, "divisor": 11.5, "answer": 20}, {"dividend": 276, "divisor": 11.5, "answer": 24}, {"dividend": 287.5, "divisor": 11.5, "answer": 25}, {"dividend": 345, "divisor": 11.5, "answer": 30}, {"dividend": 460, "divisor": 11.5, "answer": 40}, {"dividend": 575, "divisor": 11.5, "answer": 50}, {"dividend": 1150, "divisor": 11.5, "answer": 100}, {"dividend": 25, "divisor": 12.5, "answer": 2}, {"dividend": 37.5, "divisor": 12.5, "answer": 3}, {"dividend": 50, "divisor": 12.5, "answer": 4}, {"dividend": 62.5, "divisor": 12.5, "answer": 5}, {"dividend": 75, "divisor": 12.5, "answer": 6}, {"dividend": 87.5, "divisor": 12.5, "answer": 7}, {"dividend": 100, "divisor": 12.5, "answer": 8}, {"dividend": 112.5, "divisor": 12.5, "answer": 9}, {"dividend": 125, "divisor": 12.5, "answer": 10}, {"dividend": 150, "divisor": 12.5, "answer": 12}, {"dividend": 175, "divisor": 12.5, "answer": 14}, {"dividend": 187.5, "divisor": 12.5, "answer": 15}, {"dividend": 200, "divisor": 12.5, "answer": 16}, {"dividend": 225, "divisor": 12.5, "answer": 18}, {"dividend": 250, "divisor": 12.5, "answer": 20}, {"dividend": 300, "divisor": 12.5, "answer": 24}, {"dividend": 312.5, "divisor": 12.5, "answer": 25}, {"dividend": 375, "divisor": 12.5, "answer": 30}];
+const LEVEL_CONFIG = [
+  { key:"L1", label:"⭐ レベル1",  desc:"2桁整数 ÷ 2桁小数（例: 84÷1.2）",      pool: POOL_L1 },
+  { key:"L4", label:"⭐⭐ レベル2", desc:"2〜3桁小数 ÷ 2桁小数（例: 16.8÷1.2）",  pool: POOL_L4 },
+  { key:"L5", label:"⭐⭐⭐ レベル3",desc:"3桁整数 ÷ 2桁小数（例: 126÷10.5）",    pool: POOL_L5 },
+  { key:"LA", label:"🔥 レベル4",  desc:"整数 ÷ 3桁小数0.xx（例: 0.16÷0.04）",   pool: POOL_LA },
+  { key:"LB", label:"💎 レベル5",  desc:"整数 ÷ 3桁小数x.xx（例: 6.28÷3.14）",   pool: POOL_LB },
+  { key:"LC", label:"👑 レベル6",  desc:"整数 ÷ 3桁小数xx.x（例: 314÷31.4）",    pool: POOL_LC },
 ];
 
 // ── 筆算ステップ生成 ──
@@ -207,15 +200,36 @@ const vis = {
 
 
 // ── 小数点移動アニメーション（筆算形式） ──
+// decPlaces=1 → ×10（1回移動）  decPlaces=2 → ×100（2回移動）
+// phase: 0=初期 1=1回目移動中 2=1回目完了(2桁のみ停止) 3=2回目移動中 4=完了
+// ※1桁の場合: phase 0→1→4 (2,3をスキップ)
 function DecimalShiftAnim({ divisor, dividend, phase }) {
-  const CELL = 34;  // 数字1桁の幅
-  const DOT  = 10;  // 小数点の幅
+  const CELL = 34;
+  const DOT  = 10;
 
-  const dvrChars     = divisor.toString().split("");
-  const dvdChars     = dividend.toString().split("");
-  const dvdFullChars = [...dvdChars, ".", "0"];
+  const dvrChars = divisor.toString().split("");
+  const dvdChars = dividend.toString().split("");
+  const dvrDotIdx = dvrChars.indexOf(".");
+  // 小数点以下の桁数
+  const decPlaces = dvrDotIdx === -1 ? 0 : dvrChars.length - dvrDotIdx - 1;
+  const mult = Math.pow(10, decPlaces); // 10 or 100
 
-  // 数字セル
+  // 変換後の数値
+  const intDvr = Math.round(divisor * mult);
+  const intDvd = Math.round(dividend * mult);
+
+  // 被除数の小数点位置と付加する"0"の数
+  const dvdDotIdx = dvdChars.indexOf(".");
+  const dvdHasDot = dvdDotIdx !== -1;
+  const dvdDecPlaces = dvdHasDot ? dvdChars.length - dvdDotIdx - 1 : 0;
+  // 付加する0の数 = decPlaces - dvdDecPlaces（足りない分）
+  const zerosToAdd = decPlaces - dvdDecPlaces;
+  // 被除数の表示文字列：既存の小数点 + 付加する0
+  const dvdFullChars = dvdHasDot
+    ? [...dvdChars, ...Array(zerosToAdd).fill("0")]
+    : [...dvdChars, ".", ...Array(decPlaces).fill("0")];
+
+  // ── セル部品 ──
   const Num = ({ ch, color="#222", opacity=1, transition="none", borderTop=false }) => (
     <div style={{
       width:CELL, height:CELL, flexShrink:0,
@@ -226,7 +240,6 @@ function DecimalShiftAnim({ divisor, dividend, phase }) {
     }}>{ch}</div>
   );
 
-  // ）括弧（上線あり）
   const Bracket = () => (
     <div style={{
       width:CELL, height:CELL, flexShrink:0,
@@ -237,94 +250,145 @@ function DecimalShiftAnim({ divisor, dividend, phase }) {
   );
 
   // 小数点セル
-  // 外枠は固定（borderTopはここ）→ 中の点だけtranslateXで動く
-  // 矢印はSVGでオーバーレイ（phase>=1で表示）
-  const Dot = ({ moving=false, borderTop=false, showArrow=false, arrowLen=CELL }) => (
-    <div style={{
-      width:DOT, height:CELL, flexShrink:0,
-      position:"relative",
-      borderTop: borderTop ? "2px solid #333" : "none",
-    }}>
-      {/* 点（動く） */}
+  // moveSteps: 何セル右に動くか（1回目か2回目かで変わる）
+  // moving: 今動いているか
+  const Dot = ({ moveSteps=1, moving=false, borderTop=false, showArrow=false, arrowEndOffset=0 }) => {
+    const translateX = moving ? (CELL * moveSteps + DOT * (moveSteps > 1 ? moveSteps : 1)) : 0;
+    const arrowW = CELL * moveSteps + DOT * moveSteps - arrowEndOffset;
+    return (
       <div style={{
-        position:"absolute", inset:0,
-        display:"flex", alignItems:"flex-end", justifyContent:"center",
-        paddingBottom:"2px",
-        fontFamily:"monospace", fontSize:"20px", fontWeight:"bold",
-        color:"#e53935",
-        transition:"transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.7s ease",
-        transform: moving ? `translateX(${arrowLen + DOT}px)` : "translateX(0)",
-        opacity: moving ? 0.5 : 1,
-        zIndex:3,
-      }}>.</div>
+        width:DOT, height:CELL, flexShrink:0,
+        position:"relative",
+        borderTop: borderTop ? "2px solid #333" : "none",
+      }}>
+        {/* 点（動く） */}
+        <div style={{
+          position:"absolute", inset:0,
+          display:"flex", alignItems:"flex-end", justifyContent:"center",
+          paddingBottom:"2px",
+          fontFamily:"monospace", fontSize:"20px", fontWeight:"bold",
+          color:"#e53935",
+          transition:"transform 0.7s cubic-bezier(0.4,0,0.2,1), opacity 0.7s ease",
+          transform: moving ? `translateX(${translateX}px)` : "translateX(0)",
+          opacity: moving ? 0.5 : 1,
+          zIndex:3,
+        }}>.</div>
 
-      {/* 矢印SVG（点の下に弧を描く） */}
-      {showArrow && (
-        <svg
-          width={arrowLen + DOT + 8}
-          height={CELL * 2}
-          style={{
-            position:"absolute",
-            left: DOT / 2,
-            top: 0,
-            overflow:"visible",
-            zIndex:4,
+        {/* 矢印SVG：移動回数ぶんの弧を描く */}
+        {showArrow && (
+          <svg width={arrowW + 8} height={CELL * 2} style={{
+            position:"absolute", left:DOT/2, top:0,
+            overflow:"visible", zIndex:4,
             opacity: moving ? 1 : 0,
             transition:"opacity 0.3s ease 0.15s",
             pointerEvents:"none",
-          }}
-        >
-          {/* 下向き弧：制御点を下方向に */}
-          <path
-            d={`M 0,${CELL * 0.75} Q ${(arrowLen+DOT)/2},${CELL * 1.9} ${arrowLen+DOT},${CELL * 0.75}`}
-            fill="none"
-            stroke="#FF8F00"
-            strokeWidth="2.5"
-            strokeDasharray="4 2"
-          />
-          {/* 矢印の先端（右端・上向き） */}
-          <polygon
-            points={`${arrowLen+DOT},${CELL*0.55} ${arrowLen+DOT-6},${CELL*0.9} ${arrowLen+DOT+6},${CELL*0.9}`}
-            fill="#FF8F00"
-          />
-        </svg>
-      )}
-    </div>
-  );
-
-  // 除数の描画（例: ["1",".","2"] → Num + Dot + Num）
-  const renderDivisor = () => dvrChars.map((ch, i) => {
-    if (ch === ".") return (
-      <Dot key={i} moving={phase >= 1} showArrow={phase >= 1} arrowLen={CELL} />
+          }}>
+            {Array.from({ length: moveSteps }).map((_, arcIdx) => {
+              // 各弧は1セル幅（CELL+DOT）ずつ右にずれる
+              const arcW = CELL + DOT;
+              const startX = arcIdx * arcW;
+              const endX   = startX + arcW;
+              const midX   = (startX + endX) / 2;
+              const isLast = arcIdx === moveSteps - 1;
+              return (
+                <g key={arcIdx}>
+                  <path
+                    d={`M ${startX},${CELL*0.75} Q ${midX},${CELL*1.9} ${endX},${CELL*0.75}`}
+                    fill="none" stroke="#FF8F00" strokeWidth="2.5" strokeDasharray="4 2"
+                  />
+                  {/* 矢印の先端は最後の弧だけ */}
+                  {isLast && (
+                    <polygon
+                      points={`${endX},${CELL*0.55} ${endX-6},${CELL*0.9} ${endX+6},${CELL*0.9}`}
+                      fill="#FF8F00"
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </svg>
+        )}
+      </div>
     );
-    return <Num key={i} ch={ch} color="#c62828" />;
+  };
+
+  // ── 除数の描画 ──
+  // 1桁小数（phase>=1で移動）
+  // 2桁小数（phase=1で1回目、phase=3で2回目移動）
+  const renderDivisor = () => dvrChars.map((ch, i) => {
+    if (ch !== ".") return <Num key={i} ch={ch} color="#c62828" />;
+    if (decPlaces === 1) {
+      // 1回だけ移動（1桁右）
+      const moving = phase >= 1;
+      // 除数の小数点より右の桁数 → 弧の終点をその分手前に
+      const rightDigits = dvrChars.length - i - 1; // 小数点の右にある桁数
+      const endOffset = CELL * rightDigits;
+      return <Dot key={i} moveSteps={1} moving={moving} showArrow={moving} arrowEndOffset={endOffset} />;
+    } else {
+      const step1done = phase >= 2;
+      const step2moving = phase >= 3;
+      const moveSteps = step1done ? (step2moving ? 2 : 1) : 1;
+      const moving = phase >= 1;
+      const rightDigits = dvrChars.length - i - 1;
+      const endOffset = CELL * rightDigits;
+      return <Dot key={i} moveSteps={moveSteps} moving={moving} showArrow={moving} arrowEndOffset={endOffset} />;
+    }
   });
 
-  // 被除数の描画（例: ["8","4",".","0"]）
+  // ── 被除数の描画 ──
+  // 小数点が存在→同様に移動、存在しない→末尾の"."も含め追加した"0"をフェードイン
   const renderDividend = () => dvdFullChars.map((ch, i) => {
-    if (ch === ".") return (
-      <Dot key={i} moving={phase >= 1} borderTop={true} showArrow={phase >= 1} arrowLen={CELL} />
-    );
-    const isAppended = i === dvdFullChars.length - 1;
+    if (ch === ".") {
+      // 被除数の小数点は除数と同じタイミングで動く
+      if (decPlaces === 1) {
+        const moving = phase >= 1;
+        return <Dot key={i} moveSteps={1} moving={moving} borderTop={true} showArrow={moving} />;
+      } else {
+        const moveSteps = phase >= 3 ? 2 : phase >= 2 ? 1 : 1;
+        const moving = phase >= 1;
+        return <Dot key={i} moveSteps={moveSteps} moving={moving} borderTop={true} showArrow={moving} />;
+      }
+    }
+    // 付加された"0"（末尾）
+    const isAppended1 = i === dvdFullChars.length - decPlaces;     // 1個目の付加0
+    const isAppended2 = i === dvdFullChars.length - 1 && decPlaces === 2; // 2個目の付加0
+    // 付加した文字が"0"のときだけ半透明でフェードイン、それ以外はくっきり
+    const opacity = isAppended2
+      ? (ch === "0" ? (phase >= 3 ? 1 : 0.15) : 1)
+      : isAppended1
+        ? (ch === "0" ? (phase >= 1 ? 1 : 0.15) : 1)
+        : 1;
     return (
       <Num key={i} ch={ch}
-        color={isAppended ? "#1976D2" : "#1a237e"}
-        opacity={isAppended ? (phase >= 1 ? 1 : 0.15) : 1}
+        color={isAppended1||isAppended2 ? "#1976D2" : "#1a237e"}
+        opacity={opacity}
         transition="opacity 0.5s"
         borderTop={true}
       />
     );
   });
 
+  // ── 説明テキスト・ラベル ──
+  const phaseText = () => {
+    if (phase === 0) return <>小数点を右に<b>{decPlaces}つ</b>動かして、整数にしよう！（×{mult}）</>;
+    if (phase === 1) return decPlaces===1 ? <>小数点が右に動いているよ…</> : <>1回目：小数点が右に動いているよ…</>;
+    if (phase === 2) return <>もう1回動かすよ！</>;
+    if (phase === 3) return <>2回目：小数点がさらに右に動いているよ…</>;
+    return <>これで整数のわり算にできるね！（×{mult}）</>;
+  };
+
+  const multLabel = phase >= 1
+    ? (decPlaces === 2
+      ? `わる数 ×${phase >= 3 ? "100" : "10（→さらに×10）"}`
+      : "わる数 ×10")
+    : null;
+
   return (
     <div style={{display:"flex", flexDirection:"column", alignItems:"center", gap:"14px"}}>
       <p style={{fontSize:"13px", color:"#666", margin:0, textAlign:"center"}}>
-        {phase === 0 && <>小数点を右に<b>1つ</b>動かして、整数にしよう！</>}
-        {phase === 1 && <>小数点が右に動いているよ…</>}
-        {phase === 2 && <>これで整数のわり算にできるね！</>}
+        {phaseText()}
       </p>
 
-      {/* 筆算レイアウト（余白多めでアニメ見やすく） */}
       <div style={{
         display:"flex", alignItems:"center", fontFamily:"monospace",
         background:"#F8FAFF", borderRadius:"10px", padding:"14px 20px",
@@ -337,9 +401,13 @@ function DecimalShiftAnim({ divisor, dividend, phase }) {
 
       {phase >= 1 && (
         <div style={{display:"flex", fontSize:"12px", color:"#1976D2", fontWeight:"bold", gap:"4px", alignItems:"center"}}>
-          <span style={{border:"1px solid #1976D2", borderRadius:"6px", padding:"2px 8px"}}>わる数 ×10</span>
+          <span style={{border:"1px solid #1976D2", borderRadius:"6px", padding:"2px 8px"}}>
+            {multLabel}
+          </span>
           <span style={{color:"#aaa"}}>・</span>
-          <span style={{border:"1px solid #1976D2", borderRadius:"6px", padding:"2px 8px"}}>わられる数 ×10</span>
+          <span style={{border:"1px solid #1976D2", borderRadius:"6px", padding:"2px 8px"}}>
+            わられる数 ×{phase >= 3 || decPlaces===1 ? mult : "10（→さらに×10）"}
+          </span>
         </div>
       )}
     </div>
@@ -379,10 +447,12 @@ function App() {
   const [wrongCount, setWrongCount] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [done, setDone] = useState(false);
-  const [introPhase, setIntroPhase] = useState(0); // 0=表示 1=小数点移動中 2=完了
+  const [introPhase, setIntroPhase] = useState(0);
+  const [level, setLevel] = useState(0); // LEVEL_CONFIG のインデックス
 
   const pickProblem = () => {
-    const p = PROBLEM_POOL[Math.floor(Math.random() * PROBLEM_POOL.length)];
+    const pool = LEVEL_CONFIG[level].pool;
+    const p = pool[Math.floor(Math.random() * pool.length)];
     const b = buildSteps(p.dividend, p.divisor);
     setProb(p); setBuilt(b);
     setStepIdx(0); setSubStep(0); setInput("");
@@ -395,14 +465,32 @@ function App() {
     setScreen("quiz");
   };
 
-  // intro フェーズ自動進行
+  // intro フェーズ自動進行（除数の小数桁数に応じて分岐）
   useEffect(() => {
-    if (screen !== "intro") return;
-    if (introPhase === 1) {
-      const t = setTimeout(() => setIntroPhase(2), 900);
-      return () => clearTimeout(t);
+    if (screen !== "intro" || !prob) return;
+    const decPlaces = (prob.divisor.toString().split(".")[1] || "").length;
+    if (decPlaces <= 1) {
+      // 1桁小数: phase1 → 900ms → phase4(完了)
+      if (introPhase === 1) {
+        const t = setTimeout(() => setIntroPhase(4), 900);
+        return () => clearTimeout(t);
+      }
+    } else {
+      // 2桁小数: phase1→800ms→phase2(一時停止)→600ms→phase3→800ms→phase4
+      if (introPhase === 1) {
+        const t = setTimeout(() => setIntroPhase(2), 800);
+        return () => clearTimeout(t);
+      }
+      if (introPhase === 2) {
+        const t = setTimeout(() => setIntroPhase(3), 600);
+        return () => clearTimeout(t);
+      }
+      if (introPhase === 3) {
+        const t = setTimeout(() => setIntroPhase(4), 800);
+        return () => clearTimeout(t);
+      }
     }
-  }, [screen, introPhase]);
+  }, [screen, introPhase, prob]);
 
   const handleKey = (k) => {
     if (feedback === "ok") return;
@@ -498,10 +586,10 @@ function App() {
           )}
           {introPhase === 1 && (
             <p style={{textAlign:"center", color:"#1976D2", fontWeight:"bold", fontSize:"16px"}}>
-              小数点を右に1つ動かしているよ…
+              小数点が動いているよ…
             </p>
           )}
-          {introPhase === 2 && (
+          {introPhase === 4 && (
             <button onClick={startFromIntro} style={{...s.startBtn, fontSize:"17px"}}>
               筆算をはじめる！
             </button>
@@ -526,9 +614,23 @@ function App() {
           <div style={s.infoItem}><span style={s.infoIcon}>➖</span>ひく</div>
           <div style={s.infoItem}><span style={s.infoIcon}>⬇️</span>おろす</div>
         </div>
-        <p style={{ textAlign: "center", fontSize: "14px", color: "#888", marginBottom: "24px" }}>
-          整数 ÷ 小数（1以上）の筆算を練習しよう
+        <p style={{ textAlign: "center", fontSize: "14px", color: "#888", marginBottom: "12px" }}>
+          レベルを選んではじめよう！
         </p>
+        <div style={{ display:"flex", flexDirection:"column", gap:"8px", marginBottom:"20px" }}>
+          {LEVEL_CONFIG.map((lv, i) => (
+            <button key={i} onClick={() => setLevel(i)} style={{
+              padding:"12px 16px", borderRadius:"12px", border:"2px solid",
+              borderColor: level===i ? "#1976D2" : "#ddd",
+              background: level===i ? "#E3F2FD" : "#fff",
+              cursor:"pointer", textAlign:"left",
+              fontFamily:"inherit",
+            }}>
+              <span style={{ fontWeight:"bold", fontSize:"15px", color: level===i ? "#1976D2" : "#333" }}>{lv.label}</span>
+              <span style={{ fontSize:"12px", color:"#888", marginLeft:"8px" }}>{lv.desc}</span>
+            </button>
+          ))}
+        </div>
         <button onClick={pickProblem} style={s.startBtn}>はじめる！</button>
       </div>
     </div>
@@ -689,7 +791,6 @@ const s = {
   numKey: { padding: "14px", fontSize: "22px", fontWeight: "bold", borderRadius: "10px", textAlign: "center" },
   submitBtn: { display: "block", width: "100%", padding: "14px", borderRadius: "12px", border: "none", color: "#fff", fontSize: "18px", fontWeight: "bold", letterSpacing: "2px", transition: "background 0.2s" },
 };
-
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
